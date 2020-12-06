@@ -1,4 +1,4 @@
-package version
+package main
 
 // go build -ldflags "-X main.Version=x.y.yz"
 var (
