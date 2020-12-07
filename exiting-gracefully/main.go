@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 
 	"github.com/tonybase/golang-best-practices/exiting-gracefully/app"
@@ -14,22 +13,9 @@ func main() {
 	grpcSrv := grpc.NewServer()
 
 	a := app.New()
-	a.Append(app.Hook{
-		OnStart: func(ctx context.Context) error {
-			return httpSrv.Start(ctx)
-		},
-		OnStop: func(ctx context.Context) error {
-			return httpSrv.Stop(ctx)
-		},
-	})
-	a.Append(app.Hook{
-		OnStart: func(ctx context.Context) error {
-			return grpcSrv.Start(ctx)
-		},
-		OnStop: func(ctx context.Context) error {
-			return grpcSrv.Stop(ctx)
-		},
-	})
+	a.Append(app.Hook{OnStart: httpSrv.Start, OnStop: httpSrv.Stop})
+	a.Append(app.Hook{OnStart: grpcSrv.Start, OnStop: grpcSrv.Stop})
+
 	if err := a.Run(); err != nil {
 		log.Fatal(err)
 	}
