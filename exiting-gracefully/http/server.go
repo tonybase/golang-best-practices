@@ -22,7 +22,7 @@ func NewServer() *Server {
 		},
 	))
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":8000",
 		Handler: mux,
 	}
 	return &Server{srv: srv}
@@ -37,15 +37,15 @@ func (s *Server) Start(context.Context) error {
 		return err
 	}
 	go func() {
-		if err := s.srv.Serve(ln); err != nil {
+		if err := s.srv.Serve(ln); err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 	}()
 	return nil
 }
 
-// Shutdown shutdown the HTTP server.
-func (s *Server) Shutdown(ctx context.Context) error {
+// Stop stop the HTTP server.
+func (s *Server) Stop(ctx context.Context) error {
 	log.Printf("[HTTP] Stopping\n")
 
 	return s.srv.Shutdown(ctx)

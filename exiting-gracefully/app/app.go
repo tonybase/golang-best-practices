@@ -21,29 +21,29 @@ type Option func(o *Options)
 
 // Options is a life cycle options.
 type Options struct {
-	StartTimeout time.Duration
-	StopTimeout  time.Duration
-	ExitSignals  []os.Signal
+	startTimeout time.Duration
+	stopTimeout  time.Duration
+	exitSignals  []os.Signal
 }
 
 // WithStartTimeout with the start timeout.
 func WithStartTimeout(timeout time.Duration) Option {
 	return func(o *Options) {
-		o.StartTimeout = timeout
+		o.startTimeout = timeout
 	}
 }
 
 // WithStopTimeout with the stop timeout.
 func WithStopTimeout(timeout time.Duration) Option {
 	return func(o *Options) {
-		o.StopTimeout = timeout
+		o.stopTimeout = timeout
 	}
 }
 
 // WithExitSignal with the exit signals.
 func WithExitSignal(sigs ...os.Signal) Option {
 	return func(o *Options) {
-		o.ExitSignals = sigs
+		o.exitSignals = sigs
 	}
 }
 
@@ -57,9 +57,9 @@ type App struct {
 // New new a application manage.
 func New(opts ...Option) *App {
 	options := Options{
-		StartTimeout: time.Second * 30,
-		StopTimeout:  time.Second * 30,
-		ExitSignals: []os.Signal{
+		startTimeout: time.Second * 30,
+		stopTimeout:  time.Second * 30,
+		exitSignals: []os.Signal{
 			syscall.SIGTERM,
 			syscall.SIGQUIT,
 			syscall.SIGINT,
@@ -78,7 +78,7 @@ func (a *App) Append(hook Hook) {
 
 // Run starts the application, blocks on the signals channel, and then gracefully shuts the application down.
 func (a *App) Run() error {
-	startCtx, startCancel := context.WithTimeout(context.Background(), a.opts.StartTimeout)
+	startCtx, startCancel := context.WithTimeout(context.Background(), a.opts.startTimeout)
 	defer startCancel()
 	if err := a.Start(startCtx); err != nil {
 		return err
@@ -86,7 +86,7 @@ func (a *App) Run() error {
 
 	<-a.Signal()
 
-	stopCtx, stopCancel := context.WithTimeout(context.Background(), a.opts.StopTimeout)
+	stopCtx, stopCancel := context.WithTimeout(context.Background(), a.opts.stopTimeout)
 	defer stopCancel()
 	return a.Stop(stopCtx)
 }
@@ -119,7 +119,7 @@ func (a *App) Stop(ctx context.Context) error {
 
 // Signal returns a stop channel to wait on exit signals.
 func (a *App) Signal() <-chan os.Signal {
-	sig := make(chan os.Signal, len(a.opts.ExitSignals))
-	signal.Notify(sig, a.opts.ExitSignals...)
+	sig := make(chan os.Signal, len(a.opts.exitSignals))
+	signal.Notify(sig, a.opts.exitSignals...)
 	return sig
 }
