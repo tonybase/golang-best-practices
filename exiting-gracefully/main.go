@@ -1,14 +1,29 @@
 package main
 
 import (
-	"golang-best-practices/exiting-gracefully/http"
-	"golang-best-practices/exiting-gracefully/program"
+	"context"
+	"log"
+	"time"
+
+	"github.com/tonybase/golang-best-practices/exiting-gracefully/app"
+	"github.com/tonybase/golang-best-practices/exiting-gracefully/http"
 )
 
 func main() {
-	g := program.NewExitGroup()
-
 	srv := http.NewServer()
-	g.Add(srv.Start, srv.Shutdown)
-	g.Wait()
+
+	a := app.New()
+	a.Append(app.Hook{
+		OnStart: func(ctx context.Context) error {
+			return srv.Start(ctx)
+		},
+		OnStop: func(ctx context.Context) error {
+			return srv.Shutdown(ctx)
+		},
+	})
+	if err := a.Run(); err != nil {
+		log.Println(err)
+	}
+
+	time.Sleep(time.Second * 5)
 }

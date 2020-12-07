@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
-	"time"
 )
 
 // Server is a HTTP server.
@@ -29,14 +29,24 @@ func NewServer() *Server {
 }
 
 // Start start the HTTP server.
-func (s *Server) Start() error {
+func (s *Server) Start(context.Context) error {
 	log.Printf("[HTTP] Listening on: %s\n", s.srv.Addr)
-	return s.srv.ListenAndServe()
+
+	ln, err := net.Listen("tcp", s.srv.Addr)
+	if err != nil {
+		return err
+	}
+	go func() {
+		if err := s.srv.Serve(ln); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	return nil
 }
 
 // Shutdown shutdown the HTTP server.
-func (s *Server) Shutdown(error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	s.srv.Shutdown(ctx)
-	cancel()
+func (s *Server) Shutdown(ctx context.Context) error {
+	log.Printf("[HTTP] Stopping\n")
+
+	return s.srv.Shutdown(ctx)
 }
