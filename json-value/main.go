@@ -17,10 +17,8 @@ func (m Map) Get(key string) (interface{}, error) {
 		v, ok := next[k].(map[string]interface{})
 		if ok {
 			next = v
-		} else {
-			if raw, ok := next[k]; ok {
-				return raw, nil
-			}
+		} else if raw, ok := next[k]; ok {
+			return raw, nil
 		}
 	}
 	return nil, fmt.Errorf("key not found: %s", key)
