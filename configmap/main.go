@@ -13,20 +13,22 @@ type Map map[string]interface{}
 
 func (m Map) Get(key string) (interface{}, error) {
 	var (
-		keys = strings.Split(key, ".")
 		next = m
+		keys = strings.Split(key, ".")
 	)
-	for _, k := range keys {
-		v, ok := next[k].(map[string]interface{})
-		if ok {
-			next = v
-		} else if raw, ok := next[k]; ok {
-			return raw, nil
-		} else {
+	for idx, key := range keys {
+		value, ok := next[key]
+		if !ok {
+			return nil, ErrNotFound
+		}
+		if idx == len(keys)-1 {
+			return value, nil
+		}
+		if next, ok = value.(map[string]interface{}); !ok {
 			return nil, ErrNotFound
 		}
 	}
-	return next, nil
+	return nil, ErrNotFound
 }
 
 func (m Map) Scan(key string, v interface{}) error {
