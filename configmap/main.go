@@ -2,45 +2,36 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
+
+	simplejson "github.com/bitly/go-simplejson"
 )
 
-var ErrNotFound = errors.New("key not found")
-
-type Map map[string]interface{}
-
-func (m Map) Get(key string) (interface{}, error) {
-	var (
-		next = m
-		keys = strings.Split(key, ".")
-	)
-	for idx, key := range keys {
-		value, ok := next[key]
-		if !ok {
-			return nil, ErrNotFound
-		}
-		if idx == len(keys)-1 {
-			return value, nil
-		}
-		if next, ok = value.(map[string]interface{}); !ok {
-			return nil, ErrNotFound
-		}
-	}
-	return nil, ErrNotFound
+type Map struct {
+	raw *simplejson.Json
 }
 
-func (m Map) Scan(key string, v interface{}) error {
-	raw, err := m.Get(key)
+func NewMap(data []byte) (*Map, error) {
+	raw, err := simplejson.NewJson(data)
+	if err != nil {
+		return nil, err
+	}
+	return &Map{
+		raw: raw,
+	}, nil
+}
+
+func (m *Map) Value(key string) *simplejson.Json {
+	return m.raw.GetPath(strings.Split(key, ".")...)
+}
+
+func (m *Map) Scan(key string, v interface{}) error {
+	data, err := m.Value(key).MarshalJSON()
 	if err != nil {
 		return err
 	}
-	b, err := json.Marshal(raw)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(b, v)
+	return json.Unmarshal(data, v)
 }
 
 func main() {
@@ -59,8 +50,8 @@ func main() {
 			}
 		}
 	`
-	m := &Map{}
-	if err := json.Unmarshal([]byte(text), &m); err != nil {
+	m, err := NewMap([]byte(text))
+	if err != nil {
 		panic(err)
 	}
 	var settings struct {
@@ -69,11 +60,10 @@ func main() {
 		StringKey string  `json:"string_key"`
 	}
 	fmt.Println("source:", m)
-	fmt.Println("scan:", m.Scan("test.settings", &settings), settings)
-	fmt.Println(m.Get("test.settings.key"))
-	fmt.Println(m.Get("test.settings.int_key"))
-	fmt.Println(m.Get("test.settings.float_key"))
-	fmt.Println(m.Get("test.settings.string_key"))
-	fmt.Println(m.Get("test.server.addr"))
-	fmt.Println(m.Get("test.server.port"))
+	fmt.Println(m.Scan("test.settings", &settings), settings)
+	fmt.Println(m.Value("test.settings.int_key"))
+	fmt.Println(m.Value("test.settings.float_key"))
+	fmt.Println(m.Value("test.settings.string_key"))
+	fmt.Println(m.Value("test.server.addr"))
+	fmt.Println(m.Value("test.server.port"))
 }
