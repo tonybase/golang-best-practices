@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	simplejson "github.com/bitly/go-simplejson"
+	"github.com/ghodss/yaml"
 )
 
 type Map struct {
@@ -35,21 +36,21 @@ func (m *Map) Scan(key string, v interface{}) error {
 }
 
 func main() {
-	text := `
-		{
-			"test": {
-				"settings" : {
-					"int_key": 100,
-					"float_key": 1000.1, 
-					"string_key": "string_value"
-				},
-				"server": {
-					"addr": "127.0.0.1",
-					"port": 8000
-				}
-			}
-		}
-	`
+	yml := `
+test:
+  settings:
+    int_key: 100
+    float_key: 1000.1
+    string_key: string_value
+  server:
+    addr: 127.0.0.1
+    port: 8000
+`
+	text, err := yaml.YAMLToJSON([]byte(yml))
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(text))
 	m, err := NewMap([]byte(text))
 	if err != nil {
 		panic(err)
